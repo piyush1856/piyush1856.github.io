@@ -77,7 +77,7 @@
     bottom: -8px;
     left: 50%;
     font-size: 20px;
-    color: #92bcb5;
+    color: #ce3509;
     padding: 0 5px;
     background: #fff;
     transform: translateX(-50%);
@@ -201,7 +201,7 @@
     margin: 5px 0;
   }
   .home .home-content .text-3 span {
-    color: #92bcb5;
+    color: #ce3509;
     font-weight: 500;
   }
   .home .home-content a {
@@ -264,18 +264,18 @@
   }
   .about .about-content .right a {
     display: inline-block;
-    background: #92bcb5;
+    background: #ce3509;
     color: #fff;
     font-size: 20px;
     font-weight: 500;
     padding: 10px 30px;
     margin-top: 20px;
     border-radius: 6px;
-    border: 2px solid #92bcb5;
+    border: 2px solid #ce3509;
     transition: all 0.3s ease;
   }
   .about .about-content .right a:hover {
-    color: #92bcb5;
+    color: #ce3509;
     background: none;
   }
   .about .title::after {
@@ -374,18 +374,18 @@
   }
   .skills .skills-content .left a {
     display: inline-block;
-    background: #92bcb5;
+    background: #ce3509;
     color: #fff;
     font-size: 18px;
     font-weight: 500;
     padding: 8px 16px;
     margin-top: 20px;
     border-radius: 6px;
-    border: 2px solid #92bcb5;
+    border: 2px solid #ce3509;
     transition: all 0.3s ease;
   }
   .skills .skills-content .left a:hover {
-    color: #92bcb5;
+    color: #ce3509;
     background: none;
   }
   .skills .skills-content .right .bars {
@@ -413,7 +413,7 @@
     height: 100%;
     left: 0;
     top: 0;
-    background: #92bcb5;
+    background: #ce3509;
   }
   .skills-content .right .html::before {
     width: 90%;
