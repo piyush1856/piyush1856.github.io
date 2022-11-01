@@ -343,7 +343,7 @@
     width: 200px;
     /* object-fit: cover; */
     border-radius: 5%;
-    /* border: 5px solid crimson; */
+    border: 0.7px solid #ce3509;
     transition: all 0.3s ease;
   
   }
