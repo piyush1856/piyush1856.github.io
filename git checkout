@@ -1,0 +1,75 @@
+[1mdiff --cc index.html[m
+[1mindex c044ae5,eb026ac..0000000[m
+[1m--- a/index.html[m
+[1m+++ b/index.html[m
+[36m@@@ -204,7 -204,7 +204,7 @@@[m
+                      <div class="box">[m
+                          <img src="https://images-na.ssl-images-amazon.com/images/I/51I3jbybVDL.png" alt="">[m
+                          <div class="text">Upcoming Java App</div>[m
+[31m-                         <p>A fully functional java app used for entriprises.</p>[m
+[31m -                        <p>A fully functional java app.</p>[m
+[32m++                        <p>A fully functional java app used for entriprise.</p>[m
+                          <p class="techStack">Tech Used: Java, Spring Boot, Hibernate, Maven, Postman</p>[m
+                          <div class="repo-links">[m
+                              <div class="repo-div">[m
+[36m@@@ -298,16 -298,16 +298,16 @@@[m
+                          [m
+  [m
+                      </div>[m
+[31m--                </div>[m
+[32m++                                </div>[m
+                  <div class="column right">[m
+                      <div class="text">Message me</div>[m
+[31m -                    <form action="#">[m
+[32m +                    <form id="myForm">[m
+                          <div class="fields">[m
+                              <div class="field name">[m
+[31m -                                <input type="text" placeholder="Name" required>[m
+[32m +                                <input type="text" name="user_name" placeholder="Name" required>[m
+                              </div>[m
+                              <div class="field email">[m
+[31m -                                <input type="email" placeholder="Email" required>[m
+[32m +                                <input type="email" name="email" placeholder="Email" required>[m
+                              </div>[m
+                          </div>[m
+                          <div class="field">[m
+[36m@@@ -333,39 -333,3 +333,36 @@@[m
+      <script src="script.js"></script>[m
+  </body>[m
+  </html>[m
+[32m +[m
+[32m +[m
+[32m +[m
+[32m +[m
+[31m- [m
+[31m- [m
+[31m- [m
+[32m +<script>[m
+[32m +    document[m
+[32m +      .getElementById("myForm")[m
+[32m +      .addEventListener("submit", function (event) {[m
+[32m +        event.preventDefault();[m
+[32m +        const serviceID = "service_h5mwdxf";[m
+[32m +        const templateID = "template_jmq1kpa";[m
+[32m +        // send the email here[m
+[32m +        emailjs.sendForm(serviceID, templateID, this).then([m
+[32m +          (response) => {[m
+[32m +            console.log("Email Sent Successfully !", response.status, response.text);[m
+[32m +            alert("Email Sent Successfully !");[m
+[32m +          },[m
+[32m +          (error) => {[m
+[32m +            console.log("FAILED...", error);[m
+[32m +            alert("FAILED...", error);[m
+[32m +          }[m
+[32m +        );[m
+[32m +      });[m
+[32m +    </script>[m
+[32m +    <script[m
+[32m +          type="text/javascript"[m
+[32m +          src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"[m
+[32m +        ></script>[m
+[32m +        <script type="text/javascript">      (function () {[m
+[32m +            emailjs.init("794kzP2GV8IBa0UGX");[m
+[32m +          })();[m
+[32m +    [m
+[32m +        </script>[m
