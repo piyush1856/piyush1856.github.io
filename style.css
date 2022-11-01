@@ -150,7 +150,7 @@
     bottom: 10px;
     text-align: center;
     line-height: 45px;
-    color: #92bcb5;
+    color: #ce3509;
     z-index: 9999;
     font-size: 30px;
     border-radius: 6px;
@@ -525,7 +525,7 @@
     margin: 0 5px;
     outline: none !important;
     border-radius: 50%;
-    border: 2px solid #92bcb5 !important;
+    border: 2px solid #ce3509 !important;
     transition: all 0.3s ease;
   }
   .owl-dot.active {
@@ -534,7 +534,7 @@
   }
   .owl-dot.active,
   .owl-dot:hover {
-    background: #92bcb5 !important;
+    background: #ce3509 !important;
   }
   .skills-images {
     width: 120px;
