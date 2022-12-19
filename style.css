@@ -992,7 +992,7 @@
   }
   
   .monospace a {
-      color: #1D75AB;
+      color: #e9552c;
       text-decoration: none;
   }
   
@@ -1011,7 +1011,7 @@
       color: #767676;
   }
   .left.text-muted a {
-      color: #4078c0;
+      color: #e9552c;
       text-decoration: none;
   }
   .left.text-muted a:hover,
