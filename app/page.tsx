@@ -18,6 +18,13 @@ interface GitHubAdditionalStats {
   totalForks: number
 }
 
+const roles = [
+  "Backend Software Engineer",
+  "AI Engineer",
+  "Java Developer",
+  "Python Developer",
+  "GenAI Engineer"
+]
 
 export default function Home() {
   const [isDark, setIsDark] = useState(true)
@@ -27,10 +34,44 @@ export default function Home() {
   const [additionalStats, setAdditionalStats] = useState<GitHubAdditionalStats | null>(null)
   const [loading, setLoading] = useState(true)
   const sectionsRef = useRef<(HTMLElement | null)[]>([])
+  
+  // Typing animation state
+  const [currentRoleIndex, setCurrentRoleIndex] = useState(0)
+  const [currentText, setCurrentText] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark)
   }, [isDark])
+
+  // Typing animation effect
+  useEffect(() => {
+    const currentRole = roles[currentRoleIndex]
+    let timeout: NodeJS.Timeout
+
+    if (!isDeleting && currentText.length < currentRole.length) {
+      // Typing
+      timeout = setTimeout(() => {
+        setCurrentText(currentRole.slice(0, currentText.length + 1))
+      }, 100)
+    } else if (!isDeleting && currentText.length === currentRole.length) {
+      // Pause before deleting
+      timeout = setTimeout(() => {
+        setIsDeleting(true)
+      }, 1000)
+    } else if (isDeleting && currentText.length > 0) {
+      // Deleting
+      timeout = setTimeout(() => {
+        setCurrentText(currentRole.slice(0, currentText.length - 1))
+      }, 50)
+    } else if (isDeleting && currentText.length === 0) {
+      // Move to next role
+      setIsDeleting(false)
+      setCurrentRoleIndex((prev) => (prev + 1) % roles.length)
+    }
+
+    return () => clearTimeout(timeout)
+  }, [currentText, currentRoleIndex, isDeleting])
 
   useEffect(() => {
     const fetchGitHubData = async () => {
@@ -463,7 +504,10 @@ export default function Home() {
           <div className="space-y-8 w-full">
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm text-accent font-semibold uppercase tracking-widest">Backend Software Engineer</p>
+                <p className="text-lg text-accent font-semibold uppercase tracking-widest min-h-[1.5rem] flex items-center">
+                  {currentText || " "}
+                  <span className="inline-block w-0.5 h-5 bg-accent ml-1 animate-blink" />
+                </p>
                 <h2 className="text-5xl sm:text-7xl font-light leading-tight">
                   Building efficient,
                   <br />
