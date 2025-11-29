@@ -1,12 +1,30 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
 
+interface GitHubStats {
+  public_repos: number
+  followers: number
+  following: number
+  bio: string | null
+  avatar_url: string
+  html_url: string
+  created_at: string
+}
+
+interface GitHubAdditionalStats {
+  totalContributions: number
+  currentStreak: number
+  totalStars: number
+  totalForks: number
+}
+
+
 export default function Home() {
   const [isDark, setIsDark] = useState(true)
   const [activeSection, setActiveSection] = useState("about")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [githubStats, setGithubStats] = useState(null)
-  const [contributionData, setContributionData] = useState(null)
+  const [githubStats, setGithubStats] = useState<GitHubStats | null>(null)
+  const [additionalStats, setAdditionalStats] = useState<GitHubAdditionalStats | null>(null)
   const [loading, setLoading] = useState(true)
   const sectionsRef = useRef<(HTMLElement | null)[]>([])
 
@@ -22,39 +40,136 @@ export default function Home() {
         const userData = await userResponse.json()
         setGithubStats(userData)
 
-        // Note: This uses public data accessible without authentication
-        const graphqlQuery = {
-          query: `
-            query {
-              user(login: "piyush1856") {
-                contributionsCollection {
-                  contributionCalendar {
-                    totalContributions
-                    weeks {
-                      contributionDays {
-                        contributionCount
-                        date
-                      }
-                    }
-                  }
-                }
+        // Fetch all repositories to calculate accurate stats (handle pagination)
+        let allRepos: any[] = []
+        let page = 1
+        let hasMore = true
+
+        while (hasMore && page <= 10) {
+          // Limit to 10 pages to avoid infinite loops
+          try {
+            const reposResponse = await fetch(
+              `https://api.github.com/users/piyush1856/repos?per_page=100&page=${page}&sort=updated`
+            )
+            
+            if (!reposResponse.ok) {
+              console.error(`Failed to fetch repos page ${page}:`, reposResponse.status)
+              break
+            }
+
+            const reposData = await reposResponse.json()
+            
+            // Check if response is an error object
+            if (reposData.message) {
+              console.error("GitHub API error:", reposData.message)
+              break
+            }
+            
+            if (!Array.isArray(reposData) || reposData.length === 0) {
+              hasMore = false
+            } else {
+              allRepos = [...allRepos, ...reposData]
+              page++
+              // Stop if we got less than 100 (last page)
+              if (reposData.length < 100) {
+                hasMore = false
               }
             }
-          `,
+          } catch (error) {
+            console.error(`Error fetching repos page ${page}:`, error)
+            break
+          }
         }
 
-        const graphqlResponse = await fetch("https://api.github.com/graphql", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(graphqlQuery),
+        // Calculate real stats from all repositories
+        let totalStars = 0
+        let totalForks = 0
+        for (const repo of allRepos) {
+          if (repo && typeof repo.stargazers_count === 'number') {
+            totalStars += repo.stargazers_count
+          }
+          if (repo && typeof repo.forks_count === 'number') {
+            totalForks += repo.forks_count
+          }
+        }
+
+        // Verify we got the expected number of repos
+        if (allRepos.length !== githubStats?.public_repos && githubStats?.public_repos) {
+          console.warn(`Expected ${githubStats.public_repos} repos but fetched ${allRepos.length}`)
+        }
+
+        // Fetch contribution data using GitHub Contributions API (third-party service)
+        // API: https://github-contributions-api.jogruber.de
+        // This works without authentication and is reliable for static sites
+        let totalContributions = 0
+        let currentStreak = 0
+
+        try {
+          // First, get all-time totals by year
+          const totalsResponse = await fetch(
+            "https://github-contributions-api.jogruber.de/v4/piyush1856"
+          )
+
+          if (totalsResponse.ok) {
+            const totalsData = await totalsResponse.json()
+            
+            // Sum all years for total contributions
+            if (totalsData.total) {
+              totalContributions = Object.values(totalsData.total).reduce(
+                (sum: number, yearTotal: any) => sum + (yearTotal || 0),
+                0
+              ) as number
+            }
+          }
+
+          // Fetch last year's data for streak calculation
+          const contributionsResponse = await fetch(
+            "https://github-contributions-api.jogruber.de/v4/piyush1856?y=last"
+          )
+
+          if (contributionsResponse.ok) {
+            const contributionsData = await contributionsResponse.json()
+
+            // Calculate current streak from contributions array
+            if (contributionsData.contributions) {
+              const today = new Date()
+              today.setHours(0, 0, 0, 0)
+              let streak = 0
+
+              // Check backwards from today
+              for (let i = 0; i < 365; i++) {
+                const checkDate = new Date(today)
+                checkDate.setDate(checkDate.getDate() - i)
+                const dateStr = checkDate.toISOString().split("T")[0]
+
+                const day = contributionsData.contributions.find(
+                  (d: any) => d.date === dateStr
+                )
+
+                if (day && day.count > 0) {
+                  streak++
+                } else if (i === 0) {
+                  // Today has no contributions, continue checking yesterday
+                  continue
+                } else {
+                  // Hit a day with no contributions, stop
+                  break
+                }
+              }
+              currentStreak = streak
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching contribution stats:", error)
+          // Leave as 0 if fetch fails
+        }
+
+        setAdditionalStats({
+          totalContributions,
+          currentStreak,
+          totalStars,
+          totalForks,
         })
-
-        const graphqlData = await graphqlResponse.json()
-        if (graphqlData.data?.user?.contributionsCollection) {
-          setContributionData(graphqlData.data.user.contributionsCollection)
-        }
       } catch (error) {
         console.error("Error fetching GitHub data:", error)
       } finally {
@@ -174,7 +289,7 @@ export default function Home() {
     {
       id: 3,
       year: "2023",
-      role: "Backend Developer",
+      role: "Backend Developer (Founding Team)",
       company: "Growder Technovations Pvt. Ltd. & Ompax Lifestyle Pvt. Ltd.",
       period: "Mar 2023 — May 2024",
       description:
@@ -342,7 +457,7 @@ export default function Home() {
         {/* About/Hero Section */}
         <section
           id="about"
-          ref={(el) => (sectionsRef.current[0] = el)}
+          ref={(el) => { sectionsRef.current[0] = el }}
           className="min-h-screen flex items-center py-20 opacity-0"
         >
           <div className="space-y-8 w-full">
@@ -423,7 +538,7 @@ export default function Home() {
         {/* Experience Section */}
         <section
           id="experience"
-          ref={(el) => (sectionsRef.current[1] = el)}
+          ref={(el) => { sectionsRef.current[1] = el }}
           className="min-h-screen py-20 sm:py-32 opacity-0"
         >
           <div className="space-y-16">
@@ -461,7 +576,7 @@ export default function Home() {
         </section>
 
         {/* Skills Section */}
-        <section id="skills" ref={(el) => (sectionsRef.current[2] = el)} className="py-20 sm:py-32 opacity-0">
+        <section id="skills" ref={(el) => { sectionsRef.current[2] = el }} className="py-20 sm:py-32 opacity-0">
           <div className="space-y-16">
             <div className="border-b border-border pb-8">
               <h2 className="text-4xl sm:text-5xl font-light">Skills & Expertise</h2>
@@ -489,7 +604,7 @@ export default function Home() {
         </section>
 
         {/* Education Section */}
-        <section id="education" ref={(el) => (sectionsRef.current[3] = el)} className="py-20 sm:py-32 opacity-0">
+        <section id="education" ref={(el) => { sectionsRef.current[3] = el }} className="py-20 sm:py-32 opacity-0">
           <div className="space-y-16">
             <div className="border-b border-border pb-8">
               <h2 className="text-4xl sm:text-5xl font-light">Education</h2>
@@ -516,7 +631,7 @@ export default function Home() {
         {/* GitHub Contributions Section */}
         <section
           id="github-contributions"
-          ref={(el) => (sectionsRef.current[4] = el)}
+          ref={(el) => { sectionsRef.current[4] = el }}
           className="py-20 sm:py-32 opacity-0"
         >
           <div className="space-y-16">
@@ -532,47 +647,80 @@ export default function Home() {
                 <p className="text-muted-foreground">Loading GitHub stats...</p>
               </div>
             ) : githubStats ? (
-              <div className="space-y-8">
-                {contributionData && (
-                  <div className="p-6 border border-border rounded-lg bg-muted/50">
+              <div className="space-y-12">
+                {/* Stats Grid */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* First Row */}
+                  <div className="p-6 border border-border rounded-lg">
                     <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
-                      Total Contributions (Last Year)
+                      Total Contributions
                     </p>
                     <p className="text-3xl font-semibold text-accent">
-                      {contributionData.contributionCalendar.totalContributions}
+                      {additionalStats?.totalContributions?.toLocaleString() || "—"}
                     </p>
                   </div>
-                )}
 
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <div className="p-6 border border-border rounded-lg">
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
-                        Public Repositories
-                      </p>
-                      <p className="text-3xl font-semibold text-accent">{githubStats.public_repos}</p>
-                    </div>
+                  <div className="p-6 border border-border rounded-lg">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Current Streak</p>
+                    <p className="text-3xl font-semibold text-accent">
+                      {additionalStats?.currentStreak ? `${additionalStats.currentStreak} days` : "—"}
+                    </p>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-6 border border-border rounded-lg">
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Followers</p>
-                      <p className="text-3xl font-semibold text-accent">{githubStats.followers}</p>
-                    </div>
+                  <div className="p-6 border border-border rounded-lg">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
+                      Public Repositories
+                    </p>
+                    <p className="text-3xl font-semibold text-accent">{githubStats?.public_repos}</p>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-6 border border-border rounded-lg">
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Following</p>
-                      <p className="text-3xl font-semibold text-accent">{githubStats.following}</p>
-                    </div>
+                  <div className="p-6 border border-border rounded-lg">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Total Stars</p>
+                    <p className="text-3xl font-semibold text-accent">
+                      {additionalStats?.totalStars?.toLocaleString() || "—"}
+                    </p>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-6 border border-border rounded-lg">
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Bio</p>
-                      <p className="text-sm text-muted-foreground">{githubStats.bio || "Backend Engineer"}</p>
-                    </div>
+                  {/* Second Row */}
+                  <div className="p-6 border border-border rounded-lg">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Total Forks</p>
+                    <p className="text-3xl font-semibold text-accent">
+                      {additionalStats?.totalForks?.toLocaleString() || "—"}
+                    </p>
+                  </div>
+
+                  <div className="p-6 border border-border rounded-lg">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Followers</p>
+                    <p className="text-3xl font-semibold text-accent">{githubStats?.followers}</p>
+                  </div>
+
+                  <div className="p-6 border border-border rounded-lg">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Following</p>
+                    <p className="text-3xl font-semibold text-accent">{githubStats?.following}</p>
+                  </div>
+
+                  <div className="p-6 border border-border rounded-lg">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Member Since</p>
+                    <p className="text-lg font-semibold text-accent">
+                      {githubStats?.created_at
+                        ? new Date(githubStats.created_at).getFullYear()
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Contribution Graph */}
+                <div className="space-y-4">
+                  <div className="border border-border rounded-lg p-4 bg-muted/20 overflow-hidden">
+                    <img
+                      src={`https://github-readme-activity-graph.vercel.app/graph?username=piyush1856&theme=${isDark ? "github-dark" : "minimal"}&hide_border=true&bg_color=transparent&area=true&color=${isDark ? "#a855f7" : "#7c3aed"}&line=${isDark ? "#c084fc" : "#6d28d9"}&point=${isDark ? "#d8b4fe" : "#5b21b6"}`}
+                      alt="GitHub Contribution Graph"
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        e.currentTarget.style.display = "none"
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -581,22 +729,11 @@ export default function Home() {
                 <p className="text-muted-foreground">Unable to load GitHub stats</p>
               </div>
             )}
-
-            <div className="pt-8 border-t border-border">
-              <a
-                href="https://github.com/piyush1856"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-6 py-3 bg-accent text-accent-foreground rounded hover:opacity-90 transition-opacity text-sm font-medium"
-              >
-                View GitHub Profile
-              </a>
-            </div>
           </div>
         </section>
 
         {/* Connect Section */}
-        <section id="connect" ref={(el) => (sectionsRef.current[5] = el)} className="py-20 sm:py-32 opacity-0">
+        <section id="connect" ref={(el) => { sectionsRef.current[5] = el }} className="py-20 sm:py-32 opacity-0">
           <div className="grid lg:grid-cols-2 gap-12 sm:gap-16">
             <div className="space-y-8">
               <h2 className="text-4xl sm:text-5xl font-light">Let's Connect</h2>
