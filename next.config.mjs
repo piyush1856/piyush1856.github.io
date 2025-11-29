@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export', // Enable static export for GitHub Pages
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -9,6 +10,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  trailingSlash: true, // Optional: helps with GitHub Pages routing
 }
 
 export default nextConfig
