@@ -34,6 +34,7 @@ export default function Home() {
   const [additionalStats, setAdditionalStats] = useState<GitHubAdditionalStats | null>(null)
   const [loading, setLoading] = useState(true)
   const sectionsRef = useRef<(HTMLElement | null)[]>([])
+  const [scrollProgress, setScrollProgress] = useState(0)
   
   // Typing animation state
   const [currentRoleIndex, setCurrentRoleIndex] = useState(0)
@@ -234,6 +235,15 @@ export default function Home() {
       }
     }
 
+    // Calculate scroll progress
+    const calculateScrollProgress = () => {
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight - windowHeight
+      const scrolled = window.scrollY
+      const progress = (scrolled / documentHeight) * 100
+      setScrollProgress(Math.min(100, Math.max(0, progress)))
+    }
+
     // Check for hash navigation on mount
     const hash = window.location.hash.slice(1)
     if (hash) {
@@ -270,6 +280,7 @@ export default function Home() {
 
     // Also check on scroll for immediate feedback
     const handleScroll = () => {
+      calculateScrollProgress()
       sectionsRef.current.forEach((section) => {
         if (section && !section.classList.contains("animate-fade-in-up")) {
           checkAndAnimateSection(section)
@@ -277,6 +288,7 @@ export default function Home() {
       })
     }
 
+    calculateScrollProgress() // Initial calculation
     window.addEventListener("scroll", handleScroll, { passive: true })
 
     return () => {
@@ -442,7 +454,7 @@ export default function Home() {
       {/* Header/Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-light">Piyush Tyagi</h1>
+          <h1 className="text-xl sm:text-2xl font-medium">Piyush Tyagi</h1>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex gap-8">
@@ -493,6 +505,40 @@ export default function Home() {
         )}
       </header>
 
+      {/* Vertical Navigation Sidebar */}
+      <nav className="fixed left-10 top-1/2 -translate-y-1/2 z-40 hidden lg:block">
+        <div className="flex flex-col gap-8">
+          {navigationItems.map((item) => {
+            const isActive = activeSection === item
+            return (
+              <button
+                key={item}
+                onClick={() => scrollToSection(item)}
+                className="group relative flex items-center gap-3"
+                aria-label={`Navigate to ${item}`}
+              >
+                <div
+                  className={`rounded-full transition-all duration-200 flex-shrink-0 ${
+                    isActive
+                      ? "bg-accent w-3 h-3"
+                      : "bg-muted-foreground w-2 h-2 group-hover:bg-accent/50"
+                  }`}
+                />
+                <span
+                  className={`text-xs font-medium capitalize transition-opacity whitespace-nowrap ${
+                    isActive
+                      ? "text-accent opacity-100"
+                      : "text-muted-foreground opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  {item.replace("-", " ")}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-24">
         {/* About/Hero Section */}
@@ -504,9 +550,11 @@ export default function Home() {
           <div className="space-y-8 w-full">
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-lg text-accent font-semibold uppercase tracking-widest min-h-[1.5rem] flex items-center">
-                  {currentText || " "}
-                  <span className="inline-block w-0.5 h-5 bg-accent ml-1 animate-blink" />
+                <p className="text-lg text-accent font-semibold uppercase tracking-widest h-[1.75rem] flex items-center">
+                  <span className="inline-block">
+                    {currentText || "\u00A0"}
+                  </span>
+                  <span className="inline-block w-0.5 h-5 bg-accent ml-1 animate-blink flex-shrink-0" />
                 </p>
                 <h2 className="text-5xl sm:text-7xl font-light leading-tight">
                   Building efficient,
