@@ -66,6 +66,31 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    // Function to check if section is visible and animate it
+    const checkAndAnimateSection = (section: HTMLElement) => {
+      const rect = section.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      const isVisible = rect.top < windowHeight * 0.8 && rect.bottom > windowHeight * 0.2
+      
+      if (isVisible && !section.classList.contains("animate-fade-in-up")) {
+        section.classList.add("animate-fade-in-up")
+        setActiveSection(section.id)
+      }
+    }
+
+    // Check for hash navigation on mount
+    const hash = window.location.hash.slice(1)
+    if (hash) {
+      const targetSection = sectionsRef.current.find((section) => section?.id === hash)
+      if (targetSection) {
+        // Wait for scroll to complete, then animate
+        setTimeout(() => {
+          targetSection.classList.add("animate-fade-in-up")
+          setActiveSection(hash)
+        }, 300)
+      }
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -75,14 +100,33 @@ export default function Home() {
           }
         })
       },
-      { threshold: 0.3, rootMargin: "0px 0px -20% 0px" },
+      { threshold: 0.1, rootMargin: "0px 0px -10% 0px" }, // More lenient for mobile
     )
 
+    // Check all sections on mount and observe them
     sectionsRef.current.forEach((section) => {
-      if (section) observer.observe(section)
+      if (section) {
+        // Check if already visible (for initial load or direct navigation)
+        checkAndAnimateSection(section)
+        observer.observe(section)
+      }
     })
 
-    return () => observer.disconnect()
+    // Also check on scroll for immediate feedback
+    const handleScroll = () => {
+      sectionsRef.current.forEach((section) => {
+        if (section && !section.classList.contains("animate-fade-in-up")) {
+          checkAndAnimateSection(section)
+        }
+      })
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("scroll", handleScroll)
+    }
   }, [])
 
   const toggleTheme = () => {
@@ -90,7 +134,17 @@ export default function Home() {
   }
 
   const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+    const element = document.getElementById(id)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" })
+      // Ensure animation triggers after scroll
+      setTimeout(() => {
+        if (!element.classList.contains("animate-fade-in-up")) {
+          element.classList.add("animate-fade-in-up")
+        }
+        setActiveSection(id)
+      }, 500)
+    }
     setMobileMenuOpen(false)
   }
 
